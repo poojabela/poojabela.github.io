@@ -33,7 +33,7 @@ const posts = await getPosts();
 
     <p class="mt-8 max-w-xl text-base leading-8">
       I'm a <span data-annotate="underline" data-color="#ff5c93">software engineer</span> at{" "}
-      <a href="https://www.usebruno.com" target="_blank" rel="noopener" class="hover:text-pen"><span data-annotate="circle" data-color="#2f5bea">Bruno</span></a>, building tools developers
+      <a href="https://www.usebruno.com" target="_blank" rel="noopener" data-goatcounter-click="intro-bruno" class="hover:text-pen"><span data-annotate="circle" data-color="#2f5bea">Bruno</span></a>, building tools developers
       use to test their APIs. After work, I trade code for{" "}
       <span data-annotate="highlight">books</span>. Both have plot twists. Only one comes with
       tests.
@@ -136,11 +136,11 @@ const posts = await getPosts();
       {links.map((link) =>
         link.label === "Email" ? (
           <li>
-            <button type="button" data-copy-email class="scribble-link">email</button>
+            <button type="button" data-copy-email data-goatcounter-click="copy-email" class="scribble-link">email</button>
           </li>
         ) : (
           <li>
-            <a href={link.href} target="_blank" rel="noopener" class="scribble-link">
+            <a href={link.href} target="_blank" rel="noopener" data-goatcounter-click={`social-${link.label.toLowerCase()}`} class="scribble-link">
               {link.label.toLowerCase()}
             </a>
           </li>
