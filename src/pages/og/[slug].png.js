@@ -159,7 +159,7 @@ function postCard({ title, date, minutes }) {
     ]),
     el("div", { display: "flex", justifyContent: "space-between", alignItems: "flex-end" }, [
       el("div", { display: "flex", fontFamily: "Courier Prime", fontSize: 30, color: pencil }, `${date} · ${minutes} min read`),
-      el("div", { display: "flex", fontSize: 40, color: pencil }, "poojabela.github.io"),
+      el("div", { display: "flex", fontSize: 40, color: pencil }, "poojabelaramani.com"),
     ]),
     el(
       "div",

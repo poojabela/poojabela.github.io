@@ -6,7 +6,7 @@ import mdx from "@astrojs/mdx";
 import { codeTitle } from "./src/lib/code-title.js";
 
 export default defineConfig({
-  site: "https://poojabela.github.io",
+  site: "https://poojabelaramani.com",
   integrations: [react(), mdx()],
   markdown: {
     shikiConfig: {

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://poojabela.github.io/sitemap.xml
+Sitemap: https://poojabelaramani.com/sitemap.xml
