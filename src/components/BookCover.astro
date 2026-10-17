@@ -1,0 +1,27 @@
+---
+const { book, class: className = "" } = Astro.props;
+const hue = [...book.title].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 360;
+---
+
+<div class:list={["relative", className]}>
+  <span class="tape" style="width: 56px; height: 18px; top: -8px;" />
+  {book.coverId ? (
+    <img
+      src={`/covers/${book.coverId}.jpg`}
+      alt={`Cover of ${book.title}`}
+      loading="lazy"
+      width="120"
+      height="180"
+      class="aspect-[2/3] w-full object-cover shadow-[3px_4px_0_rgb(0_0_0/0.2)]"
+    />
+  ) : (
+    <div
+      class="flex aspect-[2/3] w-full flex-col justify-between p-3 shadow-[3px_4px_0_rgb(0_0_0/0.2)]"
+      style={`background: hsl(${hue} 45% 72%)`}
+      aria-hidden="true"
+    >
+      <span class="font-hand text-lg font-bold leading-tight text-note-ink">{book.title}</span>
+      <span class="font-type text-[10px] text-note-ink/70">{book.author}</span>
+    </div>
+  )}
+</div>

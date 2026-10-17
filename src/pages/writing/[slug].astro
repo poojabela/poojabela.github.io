@@ -1,0 +1,69 @@
+---
+import { render } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import { profile } from "../../constant";
+import { formatDate, getPosts, readingMinutes } from "../../lib/posts";
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<Base
+  title={post.data.title}
+  description={post.data.description}
+  ogImage={`/og/${post.id}.png`}
+  type="article"
+  publishedDate={post.data.date}
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.data.title,
+    description: post.data.description,
+    datePublished: post.data.date.toISOString(),
+    url: new URL(`/writing/${post.id}/`, Astro.site).href,
+    image: new URL(`/og/${post.id}.png`, Astro.site).href,
+    author: { "@type": "Person", name: profile.name, url: Astro.site?.href },
+  }}
+>
+  <div
+    slot="top"
+    data-reading-progress
+    class="fixed top-0 left-0 z-30 h-1 w-full origin-left scale-x-0 bg-pen"
+  />
+
+  <article>
+    <a href="/writing" class="font-hand text-2xl text-pencil scribble-link">back to all notes</a>
+    <h1 class="mt-6 font-hand text-6xl leading-none font-bold">{post.data.title}</h1>
+    <p class="mt-4 text-sm text-pencil">
+      {formatDate(post.data.date)} · {readingMinutes(post.body)} min read
+    </p>
+    <div class="prose mt-10">
+      <Content />
+    </div>
+  </article>
+</Base>
+
+<script>
+  const bar = document.querySelector<HTMLElement>("[data-reading-progress]");
+  const update = () => {
+    const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = scrollable > 0 ? window.scrollY / scrollable : 1;
+    if (bar) bar.style.transform = `scaleX(${progress})`;
+  };
+  update();
+  window.addEventListener("scroll", update, { passive: true });
+
+  document.querySelectorAll<HTMLButtonElement>("[data-copy-code]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const code = button.closest("figure")?.querySelector("pre")?.innerText ?? "";
+      await navigator.clipboard.writeText(code);
+      button.textContent = "copied!";
+      setTimeout(() => (button.textContent = "copy"), 1500);
+    });
+  });
+</script>

@@ -1,0 +1,167 @@
+---
+import { experiences } from "../constant";
+
+const styles = [
+  { color: "bg-note-yellow", tilt: "-rotate-2", align: "md:self-start", holder: "tape" },
+  { color: "bg-note-pink", tilt: "rotate-2", align: "md:self-end", holder: "pin" },
+  { color: "bg-note-blue", tilt: "-rotate-1", align: "md:self-start md:ml-20", holder: "tape" },
+];
+---
+
+<ol data-journey class="relative flex flex-col gap-12 md:gap-14">
+  <svg class="pointer-events-none absolute inset-0 hidden h-full w-full md:block" aria-hidden="true">
+    <path
+      data-journey-path
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      class="text-pencil/70"
+    />
+  </svg>
+
+  {experiences.map((exp, index) => {
+    const style = styles[index % styles.length];
+    const isCurrent = index === 0;
+    return (
+      <li
+        data-journey-note
+        data-reveal="drop"
+        style={`--d: ${index * 120}ms`}
+        class:list={[
+          "sticky-note relative p-6 pt-8 md:w-[20rem]",
+          style.color,
+          style.tilt,
+          style.align,
+          index % 2 ? "ml-6 w-[calc(100%-1.5rem)] md:ml-0" : "w-full",
+        ]}
+      >
+        {style.holder === "tape" ? (
+          <span class="tape" />
+        ) : (
+          <span class="absolute -top-2 left-1/2 h-4 w-4 -translate-x-1/2 rounded-full bg-[#e5484d] shadow-[0_3px_0_rgb(0_0_0/0.25)] after:absolute after:top-1 after:left-1 after:h-1.5 after:w-1.5 after:rounded-full after:bg-white/60" />
+        )}
+
+        {isCurrent && (
+          <span class="absolute -top-5 -right-2 rotate-12 sm:-right-4 rounded-full border-2 border-[#e5484d] bg-paper px-3 font-hand text-2xl leading-8 font-bold text-[#e5484d]">
+            now!
+          </span>
+        )}
+
+        <div class="flex items-baseline justify-between gap-3">
+          <a
+            href={exp.site}
+            target="_blank"
+            rel="noopener"
+            class="font-hand text-4xl font-bold decoration-wavy underline-offset-4 hover:underline"
+          >
+            {exp.company}
+          </a>
+          <span class="font-hand text-xl whitespace-nowrap opacity-70">{exp.duration}</span>
+        </div>
+        <p class="mt-1 text-sm font-bold">{exp.role}</p>
+        <p class="mt-3 text-sm leading-6 opacity-80">{exp.description}</p>
+
+        {exp.highlights && (
+          <button
+            type="button"
+            data-open-highlights={index}
+            class="mt-5 inline-flex -rotate-1 items-center gap-2 rounded-md border-2 border-note-ink bg-white/70 px-3 py-1 font-hand text-xl font-bold shadow-[3px_3px_0_var(--color-note-ink)] transition-all hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0_var(--color-note-ink)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+          >
+            see what i worked on <span aria-hidden="true">→</span>
+          </button>
+        )}
+      </li>
+    );
+  })}
+</ol>
+
+{experiences.map((exp, index) => exp.highlights && (
+  <dialog
+    data-highlights={index}
+    class="m-auto w-[calc(100%-2rem)] max-w-2xl overflow-visible bg-transparent p-0 text-ink backdrop:bg-black/40 backdrop:backdrop-blur-[2px]"
+  >
+    <div class="relative max-h-[85vh] overflow-y-auto bg-card p-6 pt-8 shadow-[3px_4px_0_rgb(0_0_0/0.2)] sm:p-10">
+      <button
+        type="button"
+        data-close-highlights
+        aria-label="Close"
+        class="absolute top-3 right-4 font-hand text-3xl leading-none text-pencil hover:text-ink"
+      >
+        x
+      </button>
+      <h3 class="font-hand text-4xl font-bold">
+        stuff i worked on at <a href={exp.site} target="_blank" rel="noopener" class="decoration-wavy underline-offset-4 hover:underline">{exp.company}</a>
+      </h3>
+      <p class="mt-2 text-sm leading-6 text-pencil">{exp.description}</p>
+      <ul class="mt-6 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+        {exp.highlights.map((item) => (
+          <li class="text-sm leading-6">
+            <span class="font-bold">{item.title}</span>
+            <span class="block text-pencil">{item.description}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </dialog>
+))}
+
+<script>
+  const journey = document.querySelector<HTMLElement>("[data-journey]");
+  const path = journey?.querySelector<SVGPathElement>("[data-journey-path]");
+  const notes = [...(journey?.querySelectorAll<HTMLElement>("[data-journey-note]") ?? [])];
+  let length = 0;
+
+  function drawPath() {
+    if (!journey || !path) return;
+    const center = (note: HTMLElement) => note.offsetLeft + note.offsetWidth / 2;
+    let d = "";
+    for (let i = 1; i < notes.length; i++) {
+      const from = notes[i - 1];
+      const to = notes[i];
+      const start = { x: center(from), y: from.offsetTop + from.offsetHeight - 6 };
+      const end = { x: center(to), y: to.offsetTop + 6 };
+      const bend = (end.y - start.y) * 1.4;
+      d += `M ${start.x} ${start.y} C ${start.x} ${start.y + bend}, ${end.x} ${end.y - bend}, ${end.x} ${end.y} `;
+    }
+    path.setAttribute("d", d);
+    length = path.getTotalLength();
+    path.style.strokeDasharray = `${length}`;
+    updateProgress();
+  }
+
+  function updateProgress() {
+    if (!journey || !path) return;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      path.style.strokeDashoffset = "0";
+      return;
+    }
+    const rect = journey.getBoundingClientRect();
+    const progress = (window.innerHeight * 0.75 - rect.top) / rect.height;
+    const clamped = Math.min(Math.max(progress, 0), 1);
+    path.style.strokeDashoffset = `${length * (1 - clamped)}`;
+  }
+
+  if (journey && notes.length > 1) {
+    drawPath();
+    new ResizeObserver(drawPath).observe(journey);
+    window.addEventListener("scroll", () => requestAnimationFrame(updateProgress), {
+      passive: true,
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-open-highlights]").forEach((button) => {
+    const dialog = document.querySelector<HTMLDialogElement>(
+      `[data-highlights="${button.dataset.openHighlights}"]`,
+    );
+    button.addEventListener("click", () => dialog?.showModal());
+  });
+  document.querySelectorAll<HTMLDialogElement>("[data-highlights]").forEach((dialog) => {
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+    dialog
+      .querySelector("[data-close-highlights]")
+      ?.addEventListener("click", () => dialog.close());
+  });
+</script>

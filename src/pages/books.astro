@@ -1,0 +1,54 @@
+---
+import Base from "../layouts/Base.astro";
+import BookCover from "../components/BookCover.astro";
+import { books } from "../constant";
+
+const reading = books.filter((book) => book.status === "reading");
+const wantToRead = books.filter((book) => book.status === "want");
+const read = books.filter((book) => book.status === "read");
+const tilts = ["-rotate-2", "rotate-2", "-rotate-1", "rotate-1"];
+const noteColors = ["bg-note-yellow", "bg-note-pink", "bg-note-blue", "bg-note-green"];
+---
+
+<Base title="Books" description="What I'm reading, what's next, and what I took from each book.">
+  <h1 class="font-hand text-7xl font-bold">
+    my <span data-annotate="highlight">bookshelf</span>
+  </h1>
+  <p class="mt-4 max-w-lg">What I'm reading, what's next, and one line I kept from each book I finish.</p>
+
+  {[
+    { title: "reading now", list: reading },
+    { title: "want to read", list: wantToRead },
+    { title: "finished", list: read },
+  ].filter((group) => group.list.length > 0).map((group) => (
+    <section class="mt-16">
+      <h2 class="font-hand text-4xl font-bold text-pencil">{group.title}</h2>
+      <ul class="mt-10 grid gap-x-10 gap-y-14 sm:grid-cols-2">
+        {group.list.map((book, index) => (
+          <li class="flex gap-5">
+            <BookCover
+              book={book}
+              class:list={["w-24 shrink-0 transition-transform duration-300 hover:rotate-0", tilts[index % tilts.length]]}
+            />
+            <div class="min-w-0">
+              <p class="font-bold leading-snug">{book.title}</p>
+              <p class="text-sm text-pencil">{book.author}</p>
+              {book.takeaway && (
+                <p
+                  class:list={[
+                    "sticky-note mt-4 inline-block p-3 font-hand text-xl leading-tight",
+                    noteColors[index % noteColors.length],
+                    index % 2 ? "rotate-1" : "-rotate-1",
+                  ]}
+                >
+                  {book.takeaway}
+                </p>
+              )}
+              {book.year && <p class="mt-3 text-xs text-pencil">read in {book.year}</p>}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</Base>

@@ -1,0 +1,16 @@
+---
+import Base from "../layouts/Base.astro";
+import Doodle from "../components/Doodle.astro";
+---
+
+<Base title="Not found" noindex>
+  <div class="relative py-10 text-center">
+    <Doodle name="x" strokeWidth={4} class="absolute top-4 left-6 h-8 w-8" />
+    <Doodle name="star" class="absolute top-10 right-8 h-10 w-10 text-[#f2b705]" />
+    <p class="font-hand text-[10rem] leading-none font-bold">
+      <span data-annotate="circle" data-color="#ff5c93">404</span>
+    </p>
+    <p class="mt-12 font-hand text-3xl text-pencil">this page got lost between the pages.</p>
+    <a href="/" class="mt-6 inline-block font-hand text-2xl scribble-link">take me home</a>
+  </div>
+</Base>

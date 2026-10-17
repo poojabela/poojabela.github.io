@@ -1,0 +1,197 @@
+---
+import "../styles/global.css";
+import CommandMenu from "../components/CommandMenu.jsx";
+import Doodle from "../components/Doodle.astro";
+import Shortcuts from "../components/Shortcuts.jsx";
+import Toast from "../components/Toast.jsx";
+import { books, links, profile } from "../constant";
+import { getPosts, formatDate } from "../lib/posts";
+
+const {
+  title = profile.name,
+  description = profile.bio,
+  ogImage = "/og/index.png",
+  type = "website",
+  publishedDate,
+  noindex = false,
+  jsonLd,
+} = Astro.props;
+
+const pageTitle = title === profile.name ? title : `${title} - ${profile.name}`;
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
+const ogImageUrl = new URL(ogImage, Astro.site);
+const xHandle = links.find((link) => link.label === "X")?.href.split("/").pop();
+const posts = (await getPosts()).map((post) => ({
+  slug: post.id,
+  title: post.data.title,
+}));
+const nav = [
+  { label: "about", href: "/" },
+  { label: "writing", href: "/writing" },
+  { label: "books", href: "/books" },
+];
+const isActive = (href) =>
+  href === "/" ? Astro.url.pathname === "/" : Astro.url.pathname.startsWith(href);
+const lastUpdated = formatDate(new Date());
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+    <link rel="alternate" type="application/rss+xml" title={profile.name} href="/rss.xml" />
+    <link rel="sitemap" href="/sitemap.xml" />
+    <link rel="canonical" href={canonicalUrl} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={profile.name} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={pageTitle} />
+    {publishedDate && <meta property="article:published_time" content={publishedDate.toISOString()} />}
+    {publishedDate && <meta property="article:author" content={profile.name} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    {xHandle && <meta name="twitter:creator" content={`@${xHandle}`} />}
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+    <script is:inline>
+      document.documentElement.classList.add("js");
+      try {
+        const stored = localStorage.getItem("theme");
+        const prefersDark = matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.dataset.theme = stored ?? (prefersDark ? "dark" : "light");
+      } catch {
+        document.documentElement.dataset.theme = "light";
+      }
+      if (document.documentElement.dataset.theme === "dark") {
+        document.querySelector('link[rel="icon"]').href = "/logo-dark.svg";
+      }
+    </script>
+  </head>
+  <body class="text-[15px] leading-relaxed">
+    <slot name="top" />
+    <div class="mx-auto flex min-h-screen max-w-3xl flex-col px-4 sm:px-8">
+      <header class="flex items-center justify-between gap-4 pt-6 pb-4">
+        <nav class="flex items-baseline gap-5 font-hand text-2xl sm:gap-6 sm:text-3xl">
+          {nav.map((item) => (
+            <a
+              href={item.href}
+              class:list={[
+                "inline-block transition-transform hover:-rotate-3",
+                isActive(item.href)
+                  ? "-rotate-3 scale-125 font-bold"
+                  : "text-pencil hover:text-ink",
+              ]}
+            >
+              [{item.label}]
+            </a>
+          ))}
+        </nav>
+        <button
+          type="button"
+          data-theme-toggle
+          class="text-pencil hover:text-ink"
+          aria-label="Toggle theme"
+        >
+          <Doodle name="sun" class="h-7 w-7 dark:hidden" />
+          <Doodle name="moon" class="hidden h-7 w-7 dark:block" />
+        </button>
+      </header>
+
+      <main class="margin-line flex-1 pt-8 pb-20">
+        <slot />
+      </main>
+
+      <footer class="flex flex-col gap-1 border-t-2 border-dashed border-faint/50 py-6 text-xs text-pencil sm:flex-row sm:justify-between">
+        <span>it's <time data-local-time>--:--</time> in {profile.location.toLowerCase()} right now</span>
+        <span>
+          updated {lastUpdated.toLowerCase()} · <a href="/rss.xml" class="scribble-link">rss</a> · press <kbd>?</kbd>
+        </span>
+      </footer>
+    </div>
+
+    <CommandMenu client:idle posts={posts} books={books} links={links} />
+    <Shortcuts client:idle />
+    <Toast client:idle />
+
+    <script>
+      import { annotate } from "rough-notation";
+      import { profile } from "../constant";
+      import { openCommandMenu, toggleTheme } from "../lib/actions";
+
+      document
+        .querySelectorAll("[data-open-command-menu]")
+        .forEach((element) => element.addEventListener("click", openCommandMenu));
+      document
+        .querySelector("[data-theme-toggle]")
+        ?.addEventListener("click", toggleTheme);
+
+      if (!/Mac|iPhone|iPad/.test(navigator.platform)) {
+        document
+          .querySelectorAll("[data-mod-key]")
+          .forEach((element) => (element.textContent = "Ctrl"));
+      }
+
+      const localTime = document.querySelector("[data-local-time]");
+      const formatter = new Intl.DateTimeFormat("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: profile.timeZone,
+      });
+      const tick = () => {
+        if (localTime) localTime.textContent = formatter.format(new Date()).toLowerCase();
+      };
+      tick();
+      setInterval(tick, 30_000);
+
+      const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            const element = entry.target as HTMLElement;
+            observer.unobserve(element);
+            if (element.dataset.annotate) {
+              annotate(element, {
+                type: element.dataset.annotate as any,
+                color: element.dataset.color ?? "#ffe066",
+                multiline: true,
+                padding: element.dataset.annotate === "highlight" ? 2 : 4,
+                strokeWidth: element.dataset.annotate === "highlight" ? 1 : 2,
+                animate: !reducedMotion,
+                animationDuration: 900,
+              }).show();
+            } else {
+              element.classList.add("is-drawn");
+            }
+          }
+        },
+        { threshold: 0.6 },
+      );
+      document
+        .querySelectorAll("[data-annotate], .check")
+        .forEach((element) => observer.observe(element));
+
+      const revealObserver = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue;
+            entry.target.classList.add("is-visible");
+            revealObserver.unobserve(entry.target);
+          }
+        },
+        { threshold: 0.15, rootMargin: "0px 0px -8% 0px" },
+      );
+      document
+        .querySelectorAll("[data-reveal]")
+        .forEach((element) => revealObserver.observe(element));
+    </script>
+  </body>
+</html>

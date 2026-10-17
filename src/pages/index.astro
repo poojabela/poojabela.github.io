@@ -1,0 +1,158 @@
+---
+import Base from "../layouts/Base.astro";
+import Bookshelf from "../components/Bookshelf.astro";
+import Doodle from "../components/Doodle.astro";
+import WorkJourney from "../components/WorkJourney.astro";
+import { experiences, links, profile, shipped } from "../constant";
+import { formatDate, getPosts } from "../lib/posts";
+
+const posts = await getPosts();
+---
+
+<Base
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: profile.name,
+    url: Astro.site?.href,
+    jobTitle: profile.role,
+    worksFor: { "@type": "Organization", name: profile.company, url: experiences[0].site },
+    sameAs: links.filter((link) => link.href.startsWith("http")).map((link) => link.href),
+  }}
+>
+  <section class="relative">
+    <p class="inline-block -rotate-2 font-hand text-3xl text-pencil">hey there, i'm</p>
+    <h1 class="mt-4 font-hand text-7xl leading-[0.95] font-bold sm:text-8xl">
+      <span data-annotate="highlight" class="inline-block leading-[0.8]">Pooja</span><br />Belaramani
+    </h1>
+
+    <div class="mt-2 hidden items-center gap-1 sm:absolute sm:top-28 sm:right-16 sm:mt-0 sm:flex">
+      <Doodle name="arrow" class="h-8 w-12 -scale-x-100 rotate-12 text-pencil" />
+      <span class="rotate-6 font-hand text-2xl text-pencil">that's me!</span>
+    </div>
+
+    <p class="mt-8 max-w-xl text-base leading-8">
+      I'm a <span data-annotate="underline" data-color="#ff5c93">software engineer</span> at{" "}
+      <a href="https://www.usebruno.com" target="_blank" rel="noopener" class="hover:text-pen"><span data-annotate="circle" data-color="#2f5bea">Bruno</span></a>, building tools developers
+      use to test their APIs. After work, I trade code for{" "}
+      <span data-annotate="highlight">books</span>. Both have plot twists. Only one comes with
+      tests.
+    </p>
+  </section>
+
+  <section class="mt-24">
+    <h2 data-reveal="write" class="flex items-center gap-3 font-hand text-4xl font-bold">
+      where i've worked <Doodle name="laptop" strokeWidth={1.8} class="h-8 w-8 text-pencil" />
+    </h2>
+    <Doodle name="squiggle" strokeWidth={2} data-reveal="draw" style="--d: 500ms" class="mt-1 h-4 w-28 text-[#ff5c93]" />
+    <div class="mt-12">
+      <WorkJourney />
+    </div>
+  </section>
+
+  {shipped.length > 0 && (
+  <section class="mt-24">
+    <h2 data-reveal="write" class="font-hand text-4xl font-bold">things i've shipped</h2>
+    <Doodle name="squiggle" strokeWidth={2} data-reveal="draw" style="--d: 500ms" class="mt-1 h-4 w-28 text-pen" />
+    <ul class="mt-8 space-y-6">
+      {shipped.map((item, index) => {
+        const Tag = item.href ? "a" : "div";
+        return (
+          <li data-reveal="rise" style={`--d: ${index * 120}ms`}>
+            <Tag
+              href={item.href || undefined}
+              target={item.href ? "_blank" : undefined}
+              rel={item.href ? "noopener" : undefined}
+              class="group flex gap-4"
+            >
+              <svg viewBox="0 0 28 28" class="check mt-0.5 h-7 w-7 shrink-0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="21" height="20" rx="2" stroke-width="2" transform="rotate(-2 14 14)" />
+                <path d="M7 14l5 5L26 3" stroke-width="3" stroke="#2e9e5b" />
+              </svg>
+              <span>
+                <span class="font-bold group-hover:text-pen">{item.title}</span>
+                <span class="block text-sm text-pencil">{item.description}</span>
+              </span>
+            </Tag>
+          </li>
+        );
+      })}
+    </ul>
+  </section>
+  )}
+
+  {/*
+  <section class="mt-24">
+    <div class="flex items-baseline justify-between">
+      <h2 data-reveal="write" class="font-hand text-4xl font-bold">notes & essays</h2>
+      {posts.length > 0 && (
+        <a href="/writing" class="font-hand text-2xl scribble-link">all of them</a>
+      )}
+    </div>
+    <Doodle name="squiggle" strokeWidth={2} data-reveal="draw" style="--d: 500ms" class="mt-1 h-4 w-28 text-[#f2b705]" />
+    {posts.length ? (
+      <ul class="mt-8 space-y-3">
+        {posts.slice(0, 4).map((post, index) => (
+          <li data-reveal="rise" style={`--d: ${index * 100}ms`}>
+            <a href={`/writing/${post.id}`} class="group flex items-baseline gap-2">
+              <span class="group-hover:text-pen group-hover:underline group-hover:decoration-wavy">
+                {post.data.title}
+              </span>
+              <span class="flex-1 border-b-2 border-dotted border-faint" />
+              <span class="text-xs text-pencil">
+                {formatDate(post.data.date, { month: "short", year: "numeric" }).toLowerCase()}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p class="mt-8 font-hand text-3xl text-pencil">
+        first ones are coming soon. <a href="/rss.xml" class="scribble-link">follow along</a>
+      </p>
+    )}
+  </section>
+  */}
+
+  <section class="mt-24">
+    <div class="flex items-baseline justify-between">
+      <h2 data-reveal="write" class="flex items-center gap-3 font-hand text-4xl font-bold">
+        on my desk <Doodle name="book" strokeWidth={1.8} class="h-8 w-8 text-pencil" />
+      </h2>
+      <a href="/books" class="font-hand text-2xl scribble-link">whole shelf</a>
+    </div>
+    <Bookshelf />
+  </section>
+
+  <section class="relative mt-24">
+    <h2 data-reveal="write" class="flex items-center gap-3 font-hand text-4xl font-bold">
+      say hi <Doodle name="envelope" strokeWidth={1.8} class="h-8 w-8 text-pencil" />
+    </h2>
+    <Doodle name="squiggle" strokeWidth={2} data-reveal="draw" style="--d: 500ms" class="mt-1 h-4 w-28 text-[#2e9e5b]" />
+    <p class="mt-6 max-w-lg">
+      The easiest way to reach me is email. Click it and it's copied for you.
+    </p>
+    <ul data-reveal="rise" class="mt-6 flex flex-wrap gap-x-8 gap-y-3 font-hand text-3xl">
+      {links.map((link) =>
+        link.label === "Email" ? (
+          <li>
+            <button type="button" data-copy-email class="scribble-link">email</button>
+          </li>
+        ) : (
+          <li>
+            <a href={link.href} target="_blank" rel="noopener" class="scribble-link">
+              {link.label.toLowerCase()}
+            </a>
+          </li>
+        ),
+      )}
+    </ul>
+    <Doodle name="heart" class="absolute right-4 bottom-0 hidden h-8 w-8 rotate-12 text-[#ff5c93] sm:block" />
+  </section>
+</Base>
+
+<script>
+  import { copyEmail } from "../lib/actions";
+
+  document.querySelector("[data-copy-email]")?.addEventListener("click", copyEmail);
+</script>

@@ -1,0 +1,55 @@
+---
+import Base from "../../layouts/Base.astro";
+import Doodle from "../../components/Doodle.astro";
+import { formatDate, getPosts } from "../../lib/posts";
+
+const posts = await getPosts();
+const years = Object.entries(
+  Object.groupBy(posts, (post) => post.data.date.getFullYear()),
+).sort(([a], [b]) => b - a);
+---
+
+<Base title="Writing" description="Notes on building software, reading, and work.">
+  <h1 class="font-hand text-7xl font-bold">
+    notes & <span data-annotate="highlight">essays</span>
+  </h1>
+  <p class="mt-4 max-w-lg">
+    Notes on building software, things I read, and what I learn at work.
+  </p>
+
+  {years.length === 0 && (
+    <p class="mt-12 font-hand text-3xl text-pencil">
+      nothing here yet. <a href="/rss.xml" class="scribble-link">subscribe with rss</a> to get
+      the first one.
+    </p>
+  )}
+
+  {years.map(([year, yearPosts]) => (
+    <section class="mt-14">
+      <h2 class="flex items-center gap-2 font-hand text-3xl font-bold text-pencil">
+        {year} <Doodle name="sparkle" strokeWidth={2} class="h-5 w-5" />
+      </h2>
+      <ul class="mt-4 space-y-5">
+        {yearPosts.map((post) => (
+          <li>
+            <a href={`/writing/${post.id}`} class="group block">
+              <span class="flex items-baseline gap-2">
+                <span class="font-bold group-hover:text-pen group-hover:underline group-hover:decoration-wavy">
+                  {post.data.title}
+                </span>
+                {post.data.draft && (
+                  <span class="-rotate-3 font-hand text-xl text-[#e5484d]">draft</span>
+                )}
+                <span class="flex-1 border-b-2 border-dotted border-faint" />
+                <span class="text-xs text-pencil">
+                  {formatDate(post.data.date, { month: "short", day: "numeric" }).toLowerCase()}
+                </span>
+              </span>
+              <span class="mt-1 block text-sm text-pencil">{post.data.description}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</Base>

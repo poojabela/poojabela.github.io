@@ -1,0 +1,117 @@
+---
+title: "Your Electron App Is Two Programs"
+description: "The main process, the renderer process, and how they talk to each other."
+date: 2026-10-16
+draft: false
+---
+
+import ProcessMap from "../../components/blog/ProcessMap.astro";
+import IpcPlayground from "../../components/blog/IpcPlayground.jsx";
+import WhereDoesItRun from "../../components/blog/WhereDoesItRun.jsx";
+
+Before Electron, I wrote two kinds of JavaScript. In a website, my code ran in the browser. It could change the page, but it couldn't read files on the computer. In a Node.js script, it was the opposite. My code could read files, but there was no page.
+
+Electron lets you do both in one app. You build the UI with HTML, CSS and JavaScript, and you can also read files. But these two things don't happen in the same place.
+
+An Electron app runs as two separate programs. One is like Node.js. It can read files, but it has no page. The other is like a browser tab. It shows the page, but it can't read files. Your code only works when you put it in the right one.
+
+## Two halves of Electron
+
+Electron is Chromium plus Node.js. Chromium draws the UI, the same way Chrome draws a web page. Node.js gives you access to the computer: files, the network, the operating system.
+
+Electron keeps these apart:
+
+- The **main process** runs your app and has Node.js. Your app has one main process, even if it opens many windows.
+- A **renderer process** runs a web page. Each window gets its own, so three windows means three renderers.
+
+<ProcessMap />
+
+## The main process
+
+When you start an Electron app, the main process runs first. Electron checks the `main` field in your `package.json` to know which file to run.
+
+```json title="package.json"
+{
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  }
+}
+```
+
+`electron .` starts Electron in the current folder. Electron reads the `package.json` in that folder and runs the file in `main`.
+
+The main process is the part of your app that talks to the computer. It:
+
+- Opens and closes windows
+- Decides what happens when the app starts and when the user quits
+- Shows things the operating system draws, like the menu bar, file pickers and notifications
+- Reads and saves files
+
+The main process has no page, so there is no `document` here. If you write `document.querySelector` in `main.js`, you get an error.
+
+## The renderer process
+
+Every `BrowserWindow` loads a web page, and that page runs in its own renderer process. If you can build a website, you can write renderer code. React, Vue and plain JavaScript all work.
+
+What the renderer can't do, by default, is use Node.js. No `require("fs")`, no reading files from disk. This is on purpose. A window might show content you don't fully control, and you don't want a script on a page to delete files on someone's laptop.
+
+## The preload script
+
+So how does the page get anything from the main process? Through a preload script.
+
+A preload script runs inside the renderer, before your page loads. It can use a few Electron APIs, and it decides what the page is allowed to call. The page only gets the functions you hand it.
+
+## Sending messages with IPC
+
+IPC means inter-process communication. It is how the renderer and the main process send messages to each other.
+
+Press the buttons below to see the difference between asking the main process for a file and trying to read it from the page.
+
+<IpcPlayground client:visible />
+
+Here is the same flow in code. The page wants to show the user's notes, which are saved in a file.
+
+```js title="main.js"
+const { app, BrowserWindow, ipcMain } = require("electron");
+const fs = require("node:fs/promises");
+const path = require("node:path");
+
+ipcMain.handle("notes:read", async () => {
+  const file = path.join(app.getPath("userData"), "notes.txt");
+  return fs.readFile(file, "utf8").catch(() => "");
+});
+
+app.whenReady().then(() => {
+  const win = new BrowserWindow({
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+    },
+  });
+  win.loadFile("index.html");
+});
+```
+
+```js title="preload.js"
+const { contextBridge, ipcRenderer } = require("electron");
+
+contextBridge.exposeInMainWorld("notes", {
+  read: () => ipcRenderer.invoke("notes:read"),
+});
+```
+
+```js title="renderer.js"
+window.notes.read().then((text) => {
+  document.querySelector("#notes").textContent = text;
+});
+```
+
+The page calls `window.notes.read()`. The preload script sends a `notes:read` message. The main process reads the file and sends the text back. The page never touches the file system, and it never sees `ipcRenderer`.
+
+`invoke` and `handle` are for messages that expect an answer. For one-way messages, use `ipcRenderer.send` with `ipcMain.on`. To push a message from the main process to a window, use `win.webContents.send`.
+
+## Test yourself
+
+<WhereDoesItRun client:visible />
+
+When you write a line of code in an Electron app, ask: does this need the computer, or does it need the page? The computer means the main process. The page means the renderer. If it needs both, it needs IPC.

@@ -1,0 +1,71 @@
+---
+import Doodle from "./Doodle.astro";
+import { books } from "../constant";
+
+const shelf = [
+  ...books.filter((book) => book.status === "read"),
+  ...books.filter((book) => book.status === "want"),
+  ...books.filter((book) => book.status === "reading"),
+].slice(-8);
+
+function spineStyle(book, index) {
+  const hash = [...book.title].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const hue = (hash * 37) % 360;
+  const height = 170 + (hash % 6) * 12;
+  const width = 44 + (hash % 4) * 8;
+  return `--h: ${height}px; --w: ${width}px; --c: hsl(${hue} 42% 70%); --d: ${index * 90}ms`;
+}
+---
+
+<div class="relative pt-28">
+  <div class="flex items-end gap-1.5 pl-4">
+    {shelf.map((book, index) => {
+      const isReading = book.status === "reading";
+      return (
+        <div data-reveal="rise" style={spineStyle(book, index)} class:list={["relative", isReading && "ml-3"]}>
+          {isReading && (
+            <span class="absolute -top-24 left-6 flex w-max -rotate-6 flex-col items-start font-hand text-2xl font-bold text-[#e5484d]">
+              reading now
+              <Doodle name="arrow" class="ml-2 h-7 w-9 rotate-[75deg]" />
+            </span>
+          )}
+          <a
+            href="/books"
+            aria-label={`${book.title} by ${book.author}`}
+            class:list={["spine group relative flex items-center justify-center px-1", isReading && "rotate-[9deg]"]}
+          >
+            <span class="spine-title line-clamp-1 max-h-[80%] overflow-hidden font-hand text-lg leading-none font-bold">
+              {book.title}
+            </span>
+            <span class="spine-tip sticky-note absolute max-sm:hidden bottom-[calc(100%+12px)] left-1/2 z-20 w-56 rotate-0 bg-note-yellow p-3 text-left">
+              <span class="block font-hand text-2xl leading-tight font-bold">{book.title}</span>
+              <span class="block text-xs opacity-70">{book.author}</span>
+              {book.takeaway && <span class="mt-2 block text-xs leading-5">{book.takeaway}</span>}
+              {book.status === "want" && (
+                <span class="mt-2 block font-hand text-lg text-[#e5484d]">on my want-to-read list</span>
+              )}
+            </span>
+          </a>
+        </div>
+      );
+    })}
+    <div data-reveal="rise" style="--d: 500ms" class="ml-auto hidden flex-col items-center sm:flex" aria-hidden="true">
+      <span class="h-6 w-28 -rotate-2 rounded-sm border-2 border-[#2a2723] bg-[#f4b183]" />
+      <span class="h-7 w-32 rotate-1 rounded-sm border-2 border-t-0 border-[#2a2723] bg-[#9fc5e8]" />
+      <span class="h-6 w-36 rounded-sm border-2 border-t-0 border-[#2a2723] bg-[#b4a7d6]" />
+    </div>
+    <Doodle name="plant" strokeWidth={1.6} class="ml-auto h-16 w-16 shrink-0 text-[#2e9e5b] sm:ml-0 sm:h-24 sm:w-24" />
+  </div>
+
+  <svg viewBox="0 0 600 20" preserveAspectRatio="none" class="-mt-px block h-5 w-full text-ink" aria-hidden="true">
+    <path
+      d="M2 4c120-2 240 1 360-1s170 1 236 0M2 4l4 12c180-2 400 1 586-1l4-11"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      vector-effect="non-scaling-stroke"
+    />
+  </svg>
+</div>
